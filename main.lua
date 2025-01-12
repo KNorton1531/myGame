@@ -2,7 +2,7 @@
 
 -- Screen settings
 local canvasWidth, canvasHeight = 426, 240
-local scaleFactor = 1
+local scaleFactor = 2
 local canvas
 local groundImage
 local isFullscreen = false
@@ -11,25 +11,20 @@ local debugMode = true -- Debug mode toggle
 -- Active animals in the scene
 local activeAnimals = {}
 
--- Import the inventory module
+-- Require the modules
+local WorldObjects = require("world_objects")
 local Inventory = require("inventory")
-local inventory = Inventory:new()
-
--- Import and initialize the campfire object
 local Campfire = require("objects.campfire")
-local campfire = Campfire:new(activeAnimals, debugMode)
-
--- Import and initialize the time module
 local Time = require("time")
-local time = Time:new(60)
 
--- Load the darkness shader
-local darknessShader = love.graphics.newShader("darkness_shader.glsl")
+-- Initialize instances
+local inventory = Inventory:new()
+local campfire = Campfire:new(activeAnimals, debugMode)
+local time = Time:new(60)
+local worldObjects = WorldObjects:new()
 
 -- Scene containers
-local containers = {
-    campfire
-}
+local containers = { campfire }
 
 -- Function to convert hex color to Love2D color table
 local function hexToColor(hex)
@@ -57,41 +52,19 @@ function love.load()
     customFont = love.graphics.newFont("assets/ui/font.otf", fontSize)
     love.graphics.setFont(customFont)
 
-    -- Calculate initial window size to fit the screen with correct aspect ratio
-    local initialScale = 2 -- Initial scale factor for the window
-    local windowWidth, windowHeight = canvasWidth * initialScale, canvasHeight * initialScale
+    -- Load the darkness shader
+    darknessShader = love.graphics.newShader("darkness_shader.glsl")
+
+    -- Add world objects (tent, etc.) after canvas dimensions are initialized
+    worldObjects:addObject("assets/objects/tent.png", 30, 92.5, canvasWidth, canvasHeight, 0.5)
 
     -- Window setup
-    love.window.setMode(windowWidth, windowHeight, {
-        resizable = true,
-        minwidth = canvasWidth,
-        minheight = canvasHeight,
+    love.window.setMode(852, 480, {
+        resizable = false,
         vsync = true
     })
 
-    -- Trigger resize manually to ensure correct scaling at startup
-    love.resize(windowWidth, windowHeight)
-
     love.window.setTitle("Arctic Collecting Game")
-end
-
-function love.resize(w, h)
-    -- Maintain aspect ratio by recalculating valid width and height
-    local aspectRatio = canvasWidth / canvasHeight
-    local newWidth = math.floor(h * aspectRatio + 0.5)
-    local newHeight = math.floor(w / aspectRatio + 0.5)
-
-    if w / h > aspectRatio then
-        -- Width is too large, adjust it
-        love.window.setMode(newWidth, h, { resizable = true, vsync = true })
-    else
-        -- Height is too large, adjust it
-        love.window.setMode(w, newHeight, { resizable = true, vsync = true })
-    end
-
-    -- Recalculate scale factor after resizing
-    local scaleX, scaleY = w / canvasWidth, h / canvasHeight
-    scaleFactor = math.min(scaleX, scaleY)
 end
 
 function love.update(dt)
@@ -120,26 +93,11 @@ function love.update(dt)
 end
 
 function love.keypressed(key)
-    if key == "f" then
-        -- Toggle fullscreen mode
-        isFullscreen = not isFullscreen
-        love.window.setFullscreen(isFullscreen)
-        if not isFullscreen then
-            -- Restore windowed mode with correct aspect ratio
-            local initialScale = 2
-            local windowWidth, windowHeight = canvasWidth * initialScale, canvasHeight * initialScale
-            love.window.setMode(windowWidth, windowHeight, {
-                resizable = true,
-                minwidth = canvasWidth,
-                minheight = canvasHeight,
-                vsync = true
-            })
-            love.resize(windowWidth, windowHeight)
-        end
-    elseif key == "d" then
+    if key == "d" then
         -- Toggle debug mode
         debugMode = not debugMode
-        campfire.debugMode = debugMode -- Update the campfire debug mode
+        campfire.debugMode = debugMode
+        worldObjects:toggleDebug()
     elseif key == "t" then
         -- Toggle day and night for debugging
         time:toggleDayNight()
@@ -163,6 +121,9 @@ function love.draw()
     for _, container in pairs(containers) do
         container:draw()
     end
+
+    -- Draw world objects
+    worldObjects:draw(scaleFactor, canvasWidth, canvasHeight)
 
     love.graphics.setCanvas()
 
@@ -214,12 +175,6 @@ function love.draw()
         love.graphics.print(string.format("Time of Day: %.2f", time:getTimeOfDay()), 10, 110)
     end
 end
-
-
-
-
-
-
 
 function love.mousepressed(x, y, button, istouch, presses)
     if button == 1 then
