@@ -64,7 +64,7 @@ function Campfire:getLightSource()
         x = self.x + self.width / 2,
         y = (self.y + 20) + self.height / 2,
         radius = 50, -- Light radius
-        intensity = 0.5 -- Light intensity (adjust as needed)
+        intensity = 0.3 -- Light intensity (adjust as needed)
     }
 end
 

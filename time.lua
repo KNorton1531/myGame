@@ -1,10 +1,11 @@
 local Time = {}
 
-function Time:new(dayLength)
+function Time:new(dayLength, timeScale)
     local obj = {
-        dayLength = dayLength or 60, -- Length of a full day in seconds
-        currentTime = 30, -- Current time in seconds
-        isDaytime = true -- Flag to indicate if it's daytime
+        dayLength = dayLength or 60,     -- Length of a full day in seconds
+        currentTime = 30,                -- Current time in seconds
+        isDaytime = true,                -- Flag to indicate if it's daytime
+        timeScale = timeScale or 0.5       -- Scale factor for time progression (default: normal speed)
     }
     setmetatable(obj, self)
     self.__index = self
@@ -12,15 +13,45 @@ function Time:new(dayLength)
 end
 
 function Time:update(dt)
-    self.currentTime = self.currentTime + dt
+    self.currentTime = self.currentTime + (dt * self.timeScale)
     if self.currentTime >= self.dayLength then
         self.currentTime = self.currentTime - self.dayLength
     end
 
-    -- Determine if it's daytime or nighttime
+    -- Determine if it's daytime or nighttime based on custom times
     local dayProgress = self.currentTime / self.dayLength
-    self.isDaytime = dayProgress < 0.5
+    local hourOfDay = dayProgress * 24 -- Convert day progress to hour (0-24)
+
+    -- Nighttime starts at 8 PM (20:00) and ends at 6 AM (6:00)
+    self.isDaytime = hourOfDay >= 6 and hourOfDay < 20
 end
+
+
+function Time:getFormattedTime()
+    -- Calculate total minutes in the current game time
+    local totalMinutes = (self.currentTime / self.dayLength) * 24 * 60 -- Convert to real-world minutes
+    
+    -- Extract hours and minutes
+    local hours = math.floor(totalMinutes / 60)
+    local minutes = math.floor(totalMinutes % 60)
+    
+    -- Determine AM/PM and convert to 12-hour format
+    local period = "AM"
+    if hours >= 12 then
+        period = "PM"
+    end
+    if hours == 0 then
+        hours = 12 -- Midnight (0:00) is 12:00 AM
+    elseif hours > 12 then
+        hours = hours - 12 -- Convert 13:00-23:59 to 1:00-11:59 PM
+    end
+
+    -- Format hours and minutes with leading zeros if needed
+    local formattedTime = string.format("%02d:%02d %s", hours, minutes, period)
+    
+    return formattedTime
+end
+
 
 function Time:getTimeOfDay()
     return self.currentTime
@@ -32,6 +63,11 @@ end
 
 function Time:getDayProgress()
     return self.currentTime / self.dayLength
+end
+
+-- New method to set time scale dynamically
+function Time:setTimeScale(scale)
+    self.timeScale = scale
 end
 
 return Time

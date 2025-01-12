@@ -6,7 +6,7 @@ local scaleFactor = 1
 local canvas
 local groundImage
 local isFullscreen = false
-local debugMode = false -- Debug mode toggle
+local debugMode = true -- Debug mode toggle
 
 -- Active animals in the scene
 local activeAnimals = {}
@@ -146,7 +146,13 @@ end
 function love.draw()
     -- Draw the scene to the canvas
     love.graphics.setCanvas(canvas)
-    love.graphics.clear(hexToColor("#151c35"))
+
+    if time:isDay() then
+        love.graphics.clear(hexToColor("#98d8ff"))
+    else
+        love.graphics.clear(hexToColor("#151c35"))
+    end
+
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(groundImage, 0, canvasHeight - groundImage:getHeight())
 
@@ -170,7 +176,10 @@ function love.draw()
     darknessShader:send("lightPosition", {light.x * scaleFactor, light.y * scaleFactor})
     darknessShader:send("lightRadius", light.radius * scaleFactor)
     darknessShader:send("lightIntensity", light.intensity)
-    love.graphics.rectangle("fill", 0, 0, screenWidth, screenHeight)
+
+    if not time:isDay() then
+        love.graphics.rectangle("fill", 0, 0, screenWidth, screenHeight)
+    end
     love.graphics.setShader()
 
     -- Draw UI elements and inventory
@@ -180,6 +189,9 @@ function love.draw()
     love.graphics.print("Inv", screenWidth - 90, screenHeight - 85)
 
     inventory:draw()
+
+    local formattedTime = time:getFormattedTime()
+    love.graphics.print("Time: " .. formattedTime, 600, 10)
 
     -- Debug info (if enabled)
     if debugMode then

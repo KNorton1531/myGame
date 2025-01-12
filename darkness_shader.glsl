@@ -19,7 +19,7 @@ vec4 effect(vec4 color, Image texture, vec2 texture_coords, vec2 screen_coords)
     float lightEffect = lightIntensity * attenuation;
 
     // Simulate day/night cycle: darkness increases at night
-    float darkness = 0.4 - smoothstep(0.4, 0.6, timeOfDay);
+    float darkness = 0 - smoothstep(0, 0.6, timeOfDay);
 
     // Final brightness combines darkness and light effect
     float finalBrightness = max(lightEffect, darkness);
