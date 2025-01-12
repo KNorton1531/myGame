@@ -3,7 +3,7 @@ local Time = {}
 function Time:new(dayLength, timeScale)
     local obj = {
         dayLength = dayLength or 60,     -- Length of a full day in seconds
-        currentTime = 30,                -- Current time in seconds
+        currentTime = 0,                -- Current time in seconds
         isDaytime = true,                -- Flag to indicate if it's daytime
         timeScale = timeScale or 0.5       -- Scale factor for time progression (default: normal speed)
     }
@@ -25,6 +25,21 @@ function Time:update(dt)
     -- Nighttime starts at 8 PM (20:00) and ends at 6 AM (6:00)
     self.isDaytime = hourOfDay >= 6 and hourOfDay < 20
 end
+
+function Time:toggleDayNight()
+    -- Calculate current hour based on day progress
+    local currentHour = (self.currentTime / self.dayLength) * 24
+
+    -- Toggle to nighttime if it's currently daytime, and vice versa
+    if currentHour >= 6 and currentHour < 20 then
+        -- Set time to 8 PM (start of nighttime)
+        self.currentTime = (20 / 24) * self.dayLength
+    else
+        -- Set time to 6 AM (start of daytime)
+        self.currentTime = (6 / 24) * self.dayLength
+    end
+end
+
 
 
 function Time:getFormattedTime()

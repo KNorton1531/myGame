@@ -140,6 +140,9 @@ function love.keypressed(key)
         -- Toggle debug mode
         debugMode = not debugMode
         campfire.debugMode = debugMode -- Update the campfire debug mode
+    elseif key == "t" then
+        -- Toggle day and night for debugging
+        time:toggleDayNight()
     end
 end
 
@@ -182,7 +185,7 @@ function love.draw()
     end
     love.graphics.setShader()
 
-    -- Draw UI elements and inventory
+    -- Draw UI elements and inventory on top of the scaled canvas
     love.graphics.setColor(hexToColor("#CCCCCC"))
     love.graphics.rectangle("fill", screenWidth - 100, screenHeight - 100, 40, 40)
     love.graphics.setColor(hexToColor("#000000"))
@@ -190,8 +193,15 @@ function love.draw()
 
     inventory:draw()
 
-    local formattedTime = time:getFormattedTime()
-    love.graphics.print("Time: " .. formattedTime, 600, 10)
+    -- Draw the clock at its relative position on the scaled canvas
+    local clockX = drawX + (350 * scaleFactor)
+    local clockY = drawY + (10 * scaleFactor)
+    if time:isDay() then
+        love.graphics.setColor(hexToColor("#000000"))
+    else
+        love.graphics.setColor(hexToColor("#FFFFFF"))
+    end
+    love.graphics.print("Time: " .. time:getFormattedTime(), clockX, clockY)
 
     -- Debug info (if enabled)
     if debugMode then
@@ -204,6 +214,11 @@ function love.draw()
         love.graphics.print(string.format("Time of Day: %.2f", time:getTimeOfDay()), 10, 110)
     end
 end
+
+
+
+
+
 
 
 function love.mousepressed(x, y, button, istouch, presses)
