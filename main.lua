@@ -16,12 +16,14 @@ local WorldObjects = require("world_objects")
 local Inventory = require("inventory")
 local Campfire = require("objects.campfire")
 local Time = require("time")
+local Stars = require("stars")
 
 -- Initialize instances
 local inventory = Inventory:new()
 local campfire = Campfire:new(activeAnimals, debugMode)
 local time = Time:new(60)
 local worldObjects = WorldObjects:new()
+local stars
 
 -- Scene containers
 local containers = { campfire }
@@ -55,8 +57,18 @@ function love.load()
     -- Load the darkness shader
     darknessShader = love.graphics.newShader("darkness_shader.glsl")
 
-    -- Add world objects (tent, etc.) after canvas dimensions are initialized
+    -- Add world objects
     worldObjects:addObject("assets/objects/tent.png", 30, 92.5, canvasWidth, canvasHeight, 0.5)
+    --trees
+    worldObjects:addObject("assets/objects/tree1.png", 1, 80, canvasWidth, canvasHeight, 0.5)
+    worldObjects:addObject("assets/objects/tree2.png", 5, 60, canvasWidth, canvasHeight, 0.5)
+    worldObjects:addObject("assets/objects/tree3.png", 140, 70, canvasWidth, canvasHeight, 0.5)
+    worldObjects:addObject("assets/objects/tree3.png", 156, 70, canvasWidth, canvasHeight, 0.5)
+    worldObjects:addObject("assets/objects/tree1.png", 170, 80, canvasWidth, canvasHeight, 0.5)
+    worldObjects:addObject("assets/objects/tree2.png", 180, 60, canvasWidth, canvasHeight, 0.5)
+    worldObjects:addObject("assets/objects/tree1.png", 200, 80, canvasWidth, canvasHeight, 0.5)
+
+    worldObjects:addObject("assets/objects/moon.png", 190, 11, canvasWidth, canvasHeight, 0.5)
 
     -- Window setup
     love.window.setMode(852, 480, {
@@ -65,6 +77,10 @@ function love.load()
     })
 
     love.window.setTitle("Arctic Collecting Game")
+
+    local numStars = 200 -- Change this value to set the number of stars
+    local minY = 0 -- Minimum Y level for stars (upper half of the canvas)
+    stars = Stars:new(numStars, minY) -- Initialize stars with the specified number of stars and minimum Y level
 end
 
 function love.update(dt)
@@ -90,6 +106,8 @@ function love.update(dt)
 
     -- Update time
     time:update(dt)
+
+    stars:update(dt)
 end
 
 function love.keypressed(key)
@@ -114,6 +132,10 @@ function love.draw()
         love.graphics.clear(hexToColor("#151c35"))
     end
 
+    if not time:isDay() then
+        stars:draw()
+    end
+
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(groundImage, 0, canvasHeight - groundImage:getHeight())
 
@@ -135,6 +157,7 @@ function love.draw()
 
     -- Apply darkness shader
     local light = campfire:getLightSource()
+    local lightMoon = campfire:getLightSourceMoon()
     love.graphics.setShader(darknessShader)
     darknessShader:send("timeOfDay", time:getDayProgress())
     darknessShader:send("lightPosition", {light.x * scaleFactor, light.y * scaleFactor})

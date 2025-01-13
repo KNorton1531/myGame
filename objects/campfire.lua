@@ -41,7 +41,7 @@ function Campfire:new(activeAnimals, debugMode)
         timer = 0,
         level = 1,
         activeAnimals = activeAnimals, -- Reference to active animals list
-        fireSprite = love.graphics.newImage("assets/objects/fire.png"), -- Load the fire sprite
+        fireSprite = love.graphics.newImage("assets/objects/fire1.png"), -- Load the fire sprite
         debugMode = debugMode -- Debug mode flag
     }
     setmetatable(obj, self)
@@ -104,7 +104,7 @@ end
 function Campfire:draw()
     -- Draw the fire sprite just below the container
     love.graphics.setColor(1, 1, 1) -- Reset color to white for the sprite
-    love.graphics.draw(self.fireSprite, 105, -38 + self.height)
+    love.graphics.draw(self.fireSprite, 170, 153 + self.height)
 
     -- Draw the campfire container
     if self.debugMode then
