@@ -59,14 +59,6 @@ function Campfire:update(dt)
     end
 end
 
-function Campfire:getLightSource()
-    return {
-        x = self.x + self.width / 2,
-        y = (self.y + 20) + self.height / 2,
-        radius = 50, -- Light radius
-        intensity = 0.3 -- Light intensity (adjust as needed)
-    }
-end
 
 
 function Campfire:spawnAnimal()

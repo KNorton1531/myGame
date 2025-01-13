@@ -28,6 +28,13 @@ local stars
 -- Scene containers
 local containers = { campfire }
 
+local LightSource = require("LightSource")
+local lightSources = {
+    LightSource:new(175, 190, 40, 0.7),
+    LightSource:new(393, 37, 70, 0.4),
+}
+
+
 -- Function to convert hex color to Love2D color table
 local function hexToColor(hex)
     hex = hex:gsub("#", "")
@@ -57,9 +64,15 @@ function love.load()
     -- Load the darkness shader
     darknessShader = love.graphics.newShader("darkness_shader.glsl")
 
+    -- Set initial shader uniforms to avoid incorrect initial display
+    local initialLight = lightSources[1]:getLightData() -- Access the first light source
+    darknessShader:send("lightPosition", {initialLight.x * scaleFactor, initialLight.y * scaleFactor})
+    darknessShader:send("lightRadius", initialLight.radius * scaleFactor)
+    darknessShader:send("lightIntensity", initialLight.intensity)
+    darknessShader:send("timeOfDay", time:getDayProgress())
+
     -- Add world objects
     worldObjects:addObject("assets/objects/tent.png", 30, 92.5, canvasWidth, canvasHeight, 0.5)
-    --trees
     worldObjects:addObject("assets/objects/tree1.png", 1, 80, canvasWidth, canvasHeight, 0.5)
     worldObjects:addObject("assets/objects/tree2.png", 5, 60, canvasWidth, canvasHeight, 0.5)
     worldObjects:addObject("assets/objects/tree3.png", 140, 70, canvasWidth, canvasHeight, 0.5)
@@ -67,8 +80,6 @@ function love.load()
     worldObjects:addObject("assets/objects/tree1.png", 170, 80, canvasWidth, canvasHeight, 0.5)
     worldObjects:addObject("assets/objects/tree2.png", 180, 60, canvasWidth, canvasHeight, 0.5)
     worldObjects:addObject("assets/objects/tree1.png", 200, 80, canvasWidth, canvasHeight, 0.5)
-
-    worldObjects:addObject("assets/objects/moon.png", 190, 11, canvasWidth, canvasHeight, 0.5)
 
     -- Window setup
     love.window.setMode(852, 480, {
@@ -82,6 +93,8 @@ function love.load()
     local minY = 0 -- Minimum Y level for stars (upper half of the canvas)
     stars = Stars:new(numStars, minY) -- Initialize stars with the specified number of stars and minimum Y level
 end
+
+
 
 function love.update(dt)
     -- Update containers and spawn animals
@@ -147,6 +160,15 @@ function love.draw()
     -- Draw world objects
     worldObjects:draw(scaleFactor, canvasWidth, canvasHeight)
 
+    -- Draw the moon only at nighttime
+    if not time:isDay() then
+        local moonImage = love.graphics.newImage("assets/objects/moon.png")
+        love.graphics.draw(moonImage, 380, 22, 0, 1, 1)
+    else
+        local sunImage = love.graphics.newImage("assets/objects/sun.png")
+        love.graphics.draw(sunImage, 375, 15, 0, 1, 1)
+    end
+
     love.graphics.setCanvas()
 
     -- Draw the scaled canvas to the screen
@@ -155,19 +177,19 @@ function love.draw()
     local drawY = (screenHeight - canvasHeight * scaleFactor) / 2
     love.graphics.draw(canvas, drawX, drawY, 0, scaleFactor, scaleFactor)
 
-    -- Apply darkness shader
-    local light = campfire:getLightSource()
-    local lightMoon = campfire:getLightSourceMoon()
-    love.graphics.setShader(darknessShader)
-    darknessShader:send("timeOfDay", time:getDayProgress())
-    darknessShader:send("lightPosition", {light.x * scaleFactor, light.y * scaleFactor})
-    darknessShader:send("lightRadius", light.radius * scaleFactor)
-    darknessShader:send("lightIntensity", light.intensity)
-
     if not time:isDay() then
-        love.graphics.rectangle("fill", 0, 0, screenWidth, screenHeight)
+        love.graphics.setShader(darknessShader)
+        for _, light in ipairs(lightSources) do
+            local lightData = light:getLightData()
+            darknessShader:send("lightPosition", {lightData.x * scaleFactor, lightData.y * scaleFactor})
+            darknessShader:send("lightRadius", lightData.radius * scaleFactor)
+            darknessShader:send("lightIntensity", lightData.intensity)
+    
+            -- Draw the darkness overlay for this light source
+            love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+        end
+        love.graphics.setShader()
     end
-    love.graphics.setShader()
 
     -- Draw UI elements and inventory on top of the scaled canvas
     love.graphics.setColor(hexToColor("#CCCCCC"))

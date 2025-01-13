@@ -3,9 +3,9 @@ local Time = {}
 function Time:new(dayLength, timeScale)
     local obj = {
         dayLength = dayLength or 60,     -- Length of a full day in seconds
-        currentTime = 0,                -- Current time in seconds
-        isDaytime = true,                -- Flag to indicate if it's daytime
-        timeScale = timeScale or 0.5       -- Scale factor for time progression (default: normal speed)
+        currentTime = 30,                -- Current time in seconds
+        isDaytime = false,                -- Flag to indicate if it's daytime
+        timeScale = timeScale or 3       -- Scale factor for time progression (default: normal speed)
     }
     setmetatable(obj, self)
     self.__index = self
