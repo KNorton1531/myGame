@@ -25,6 +25,8 @@ local time = Time:new(60)
 local worldObjects = WorldObjects:new()
 local stars
 
+local backpackScale = 2 -- Scale factor for the backpack icon
+
 -- Scene containers
 local containers = { campfire }
 
@@ -34,6 +36,9 @@ local lightSources = {
     LightSource:new(393, 37, 70, 0.4),
 }
 
+-- Box position and size (global scope)
+local boxX, boxY = 400, 215
+local boxWidth, boxHeight = 20, 20
 
 -- Function to convert hex color to Love2D color table
 local function hexToColor(hex)
@@ -60,6 +65,9 @@ function love.load()
     local fontSize = 16
     customFont = love.graphics.newFont("assets/ui/font.otf", fontSize)
     love.graphics.setFont(customFont)
+
+    -- Load the backpack image for the inventory UI button
+    backpackImage = love.graphics.newImage("assets/ui/backpack.png")
 
     -- Load the darkness shader
     darknessShader = love.graphics.newShader("darkness_shader.glsl")
@@ -89,12 +97,16 @@ function love.load()
 
     love.window.setTitle("Arctic Collecting Game")
 
+    -- Get screen dimensions after setting the window mode
+    screenWidth, screenHeight = love.graphics.getDimensions()
+
     local numStars = 200 -- Change this value to set the number of stars
     local minY = 0 -- Minimum Y level for stars (upper half of the canvas)
     stars = Stars:new(numStars, minY) -- Initialize stars with the specified number of stars and minimum Y level
 end
 
 
+local isHoveringBackpack = false -- Flag for hover effect
 
 function love.update(dt)
     -- Update containers and spawn animals
@@ -117,11 +129,28 @@ function love.update(dt)
         end
     end
 
+    -- Check if mouse is hovering over the box
+    local mouseX, mouseY = love.mouse.getPosition()
+    local drawX = (screenWidth - canvasWidth * scaleFactor) / 2
+    local drawY = (screenHeight - canvasHeight * scaleFactor) / 2
+    local canvasMouseX = (mouseX - drawX) / scaleFactor
+    local canvasMouseY = (mouseY - drawY) / scaleFactor
+
+    if canvasMouseX >= boxX and canvasMouseX <= boxX + boxWidth and
+       canvasMouseY >= boxY and canvasMouseY <= boxY + boxHeight then
+        isHoveringBackpack = true
+        love.mouse.setCursor(love.mouse.getSystemCursor("hand"))
+    else
+        isHoveringBackpack = false
+        love.mouse.setCursor() -- Reset to default cursor
+    end
+
     -- Update time
     time:update(dt)
-
     stars:update(dt)
 end
+
+
 
 function love.keypressed(key)
     if key == "d" then
@@ -149,6 +178,7 @@ function love.draw()
         stars:draw()
     end
 
+    -- Draw the game world (scaled elements)
     love.graphics.setColor(1, 1, 1)
     love.graphics.draw(groundImage, 0, canvasHeight - groundImage:getHeight())
 
@@ -160,7 +190,7 @@ function love.draw()
     -- Draw world objects
     worldObjects:draw(scaleFactor, canvasWidth, canvasHeight)
 
-    -- Draw the moon only at nighttime
+    -- Draw the moon or sun
     if not time:isDay() then
         local moonImage = love.graphics.newImage("assets/objects/moon.png")
         love.graphics.draw(moonImage, 380, 22, 0, 1, 1)
@@ -177,25 +207,12 @@ function love.draw()
     local drawY = (screenHeight - canvasHeight * scaleFactor) / 2
     love.graphics.draw(canvas, drawX, drawY, 0, scaleFactor, scaleFactor)
 
-    if not time:isDay() then
-        love.graphics.setShader(darknessShader)
-        for _, light in ipairs(lightSources) do
-            local lightData = light:getLightData()
-            darknessShader:send("lightPosition", {lightData.x * scaleFactor, lightData.y * scaleFactor})
-            darknessShader:send("lightRadius", lightData.radius * scaleFactor)
-            darknessShader:send("lightIntensity", lightData.intensity)
-    
-            -- Draw the darkness overlay for this light source
-            love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
-        end
-        love.graphics.setShader()
-    end
+    -- Draw the debug box (unscaled size)
+    love.graphics.setColor(0, 1, 0, 0.5) -- Green with transparency
+    love.graphics.rectangle("fill", boxX * scaleFactor, boxY * scaleFactor, boxWidth * scaleFactor, boxHeight * scaleFactor)
 
-    -- Draw UI elements and inventory on top of the scaled canvas
-    love.graphics.setColor(hexToColor("#CCCCCC"))
-    love.graphics.rectangle("fill", screenWidth - 100, screenHeight - 100, 40, 40)
-    love.graphics.setColor(hexToColor("#000000"))
-    love.graphics.print("Inv", screenWidth - 90, screenHeight - 85)
+    -- Reset color
+    love.graphics.setColor(1, 1, 1)
 
     inventory:draw()
 
@@ -230,14 +247,17 @@ function love.mousepressed(x, y, button, istouch, presses)
         local canvasX = (x - drawX) / scaleFactor
         local canvasY = (y - drawY) / scaleFactor
 
-        -- Check if inventory button is clicked
-        if canvasX >= canvasWidth - 50 and canvasY >= canvasHeight - 50 and canvasX <= canvasWidth - 10 and canvasY <= canvasHeight - 10 then
+        -- Check if the click is within the box
+        if canvasX >= boxX and canvasX <= boxX + boxWidth and
+           canvasY >= boxY and canvasY <= boxY + boxHeight then
+            print("Box clicked!") -- Debugging message
             inventory:toggle()
         end
 
         -- Check if an animal is clicked
         for i, animal in ipairs(activeAnimals) do
-            if canvasX >= animal.x and canvasX <= animal.x + animal.size and canvasY >= animal.y and canvasY <= animal.y + animal.size then
+            if canvasX >= animal.x and canvasX <= animal.x + animal.size and
+               canvasY >= animal.y and canvasY <= animal.y + animal.size then
                 inventory:addAnimal(animal)
                 table.remove(activeAnimals, i)
                 animal.container.spawnedCount = animal.container.spawnedCount - 1
@@ -246,3 +266,35 @@ function love.mousepressed(x, y, button, istouch, presses)
         end
     end
 end
+
+
+
+
+function love.mousepressed(x, y, button, istouch, presses)
+    if button == 1 then
+        -- Adjust mouse coordinates to match canvas space
+        local drawX = (screenWidth - canvasWidth * scaleFactor) / 2
+        local drawY = (screenHeight - canvasHeight * scaleFactor) / 2
+        local canvasX = (x - drawX) / scaleFactor
+        local canvasY = (y - drawY) / scaleFactor
+
+        -- Check if the click is within the box (in canvas space)
+        if canvasX >= boxX and canvasX <= boxX + boxWidth and
+           canvasY >= boxY and canvasY <= boxY + boxHeight then
+            print("Box clicked!") -- Debugging message
+            inventory:toggle()
+        end
+
+        -- Check if an animal is clicked
+        for i, animal in ipairs(activeAnimals) do
+            if canvasX >= animal.x and canvasX <= animal.x + animal.size and
+               canvasY >= animal.y and canvasY <= animal.y + animal.size then
+                inventory:addAnimal(animal)
+                table.remove(activeAnimals, i)
+                animal.container.spawnedCount = animal.container.spawnedCount - 1
+                break
+            end
+        end
+    end
+end
+
