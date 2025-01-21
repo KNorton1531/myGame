@@ -3,7 +3,7 @@ local Stars = {}
 function Stars:new(numStars, minY)
     local stars = {}
     minY = minY or 0 -- Default to 0 if minY is not provided
-    local maxY = love.graphics.getHeight() / 2 -- Limit stars to the upper half
+    local maxY = love.graphics.getHeight() / 1 -- Limit stars to the upper half
 
     for i = 1, numStars do
         local y

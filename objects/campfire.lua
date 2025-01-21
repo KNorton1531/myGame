@@ -4,44 +4,65 @@ local Campfire = {}
 
 function Campfire:new(activeAnimals, debugMode)
     local obj = {
-        x = 145,
-        y = 140,
-        width = 60,
-        height = 40,
+        x = 240,
+        y = 300,
+        width = 75,
+        height = 100,
         type = "campfire",
         campfirePool = {
             { 
                 name = "Firefly", 
                 type = "bug",
-                rarity = 0.9, 
-                speed = 20, 
+                rarity = 0.5, 
+                speed = 30, 
                 color = {1, 1, 0},
-                sellPrice = 2
+                sellPrice = 2,
+                size = 4
             },
             { 
-                name = "Moth", 
+                name = "Snow Moth", 
                 type = "bug",
                 rarity = 0.1, 
                 speed = 15, 
                 color = {1, 1, 1},
-                sellPrice = 15
+                sellPrice = 15,
+                size = 3
             },
             { 
-                name = "Butterfly", 
+                name = "Frostbottle", 
+                type = "bug",
+                rarity = 0.2, 
+                speed = 15, 
+                color = {0, 0, 1},
+                sellPrice = 15,
+                size = 3
+            },
+            { 
+                name = "Ice Fly", 
+                type = "bug",
+                rarity = 0.1, 
+                speed = 15, 
+                color = {0, 0, 0},
+                sellPrice = 15,
+                size = 3
+            },
+            { 
+                name = "White Butterfly", 
                 type = "bug",
                 rarity = 0.1, 
                 speed = 15, 
                 color = {1, 0, 1},
-                sellPrice = 15
+                sellPrice = 15,
+                size = 3
             }
         },
         spawnRate = 0.1,
-        spawnLimit = 5,
+        spawnLimit = 10,
         spawnedCount = 0,
         timer = 0,
         level = 1,
         activeAnimals = activeAnimals, -- Reference to active animals list
-        fireSprite = love.graphics.newImage("assets/objects/fire1.png"), -- Load the fire sprite
+        fireSprite = love.graphics.newImage("assets/objects/fire2.png"), -- Load the fire sprite
         debugMode = debugMode -- Debug mode flag
     }
     setmetatable(obj, self)
@@ -80,7 +101,7 @@ function Campfire:spawnAnimal()
                 name = animal.name,
                 x = self.x + math.random(self.width),
                 y = self.y + math.random(self.height),
-                size = 2,
+                size = animal.size,
                 speed = animal.speed,
                 vx = vx,
                 vy = vy,
@@ -96,7 +117,7 @@ end
 function Campfire:draw()
     -- Draw the fire sprite just below the container
     love.graphics.setColor(1, 1, 1) -- Reset color to white for the sprite
-    love.graphics.draw(self.fireSprite, 170, 153 + self.height)
+    love.graphics.draw(self.fireSprite, 270, 388)
 
     -- Draw the campfire container
     if self.debugMode then
